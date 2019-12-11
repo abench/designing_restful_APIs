@@ -1,9 +1,9 @@
-from geocode import getGeocodeLocation
+from geocode import getGeocodeLocation, getGeocodeLocationRequest
 import json
+import requests
 import httplib2
 
 from conspiratorial.designing_restful_APIs.api_keys import foursquare_client_id, foursquare_client_secret
-"
 
 
 import sys
@@ -12,12 +12,34 @@ import codecs
 sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 sys.stderr = codecs.getwriter('utf8')(sys.stderr)
 
-foursquare_client_id = "PASTE_YOUR_ID_HERE"
-foursquare_client_secret = "YOUR_SECRET_HERE"
-
-
 def findARestaurant(mealType, location):
 
+    (latitude, longitude) = getGeocodeLocationRequest(location)
+
+    url = 'https://api.foursquare.com/v2/venues/search'
+
+    params = dict(
+      client_id=foursquare_client_id,
+      client_secret=foursquare_client_secret,
+      v='20180323',
+      ll='{},{}'.format(latitude,longitude),
+      query=mealType,
+      limit=1
+    )
+    resp = requests.get(url=url, params=params)
+    data = json.loads(resp.text)
+    #print(data)
+    result={}
+    #name = ""
+
+    #result['address'] = ""
+    result['address'] = data['response']['venues'][0]['location']['address']
+
+    #result['address'] = [name.append(i) for i in data['response']['venues'][0]['location']['formattedAddress']]
+    return dict(
+        name=data['response']['venues'][0]['name'],
+        address=data['response']['venues'][0]['location']['address']
+    )
 
 # 1. Use getGeocodeLocation to get the latitude and longitude coordinates of the location string.
 
@@ -29,6 +51,8 @@ def findARestaurant(mealType, location):
 # 5. Grab the first image
 # 6. If no image is available, insert default a image url
 # 7. Return a dictionary containing the restaurant name, address, and image url
+
+
 if __name__ == '__main__':
     findARestaurant("Pizza", "Tokyo, Japan")
     findARestaurant("Tacos", "Jakarta, Indonesia")
